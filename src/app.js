@@ -13,9 +13,11 @@ const app = new App({
 app.command('/summarize', async ({ command, ack, say }) => {
     // Acknowledge command request
     await ack();
-    (channelId, timeSpan) = parseCommand(command);
-    messageText = getMessageRaw(channelId, timeSpan);
-    responseText = summarize(messageText);
+
+    const { channelId, date } = parseCommand(command);
+    console.log(channelId, date);
+    //const messageText = getMessageRaw(channelId, timeSpan);
+    //onst responseText = summarize(messageText);
 });
 
 function parseCommand(command) {
@@ -26,8 +28,8 @@ function parseCommand(command) {
         throw new Error('Invalid command parameters');
     }
 
-    channelId = splitStr[0];
-    timeAmt = splitStr[1];
+    channelId = splitStr[0].match(/<#(C\w+)(\|[^>]+)?>/)[1]; // god forgive me
+    timeAmt = parseInt(splitStr[1]);
     timeUnit = splitStr[2];
 
     // Convert timeAmt and timeUnit to date
@@ -45,7 +47,7 @@ function parseCommand(command) {
         default:
             throw new Error('Invalid time unit');
     }
-    return (channelId, date);
+    return { channelId, date };
 }
 
 
