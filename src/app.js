@@ -1,4 +1,5 @@
 const { App } = require('@slack/bolt');
+const { OpenAI } = require("langchain/llms/openai");
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -10,15 +11,41 @@ const app = new App({
     port: parseInt(process.env.PORT || '3000')
 });
 
+const llm = new OpenAI({
+    openAIApiKey: process.env.OPENAI_SECRET,
+});
+
+
 app.command('/summarize', async ({ command, ack, say }) => {
     // Acknowledge command request
     await ack();
 
     const { channelId, date } = parseCommand(command);
-    console.log(channelId, date);
-    //const messageText = getMessageRaw(channelId, timeSpan);
-    //onst responseText = summarize(messageText);
+    const messages = await getRawMessages(channelId, date);
+    const responseText = await summarize(messages);
+
+    await say(responseText);
 });
+
+async function getRawMessages(channelId, fromDate) {
+    const messages = await app.client.conversations.history({
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: channelId,
+        oldest: fromDate.getTime() / 1000,
+        limit: 1000
+    });
+
+    // Extract message text and user id:
+    messages.messages = messages.messages.map(message => {
+        return {
+            text: message.text,
+            user: message.user
+        }
+    });
+
+    return messages.messages;
+}
+
 
 function parseCommand(command) {
     command.text = command.text.trim();
@@ -48,6 +75,16 @@ function parseCommand(command) {
             throw new Error('Invalid time unit');
     }
     return { channelId, date };
+}
+
+async function summarize(messages) {
+    let text = 'Summarize the following messages, disregard messages you deem unimportant: \n';
+    messages.forEach(message => {
+        text += message.user + " sent: \n"
+        text += message.text + '\n';
+    });
+
+    return await llm.predict(text);
 }
 
 

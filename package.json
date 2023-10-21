@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@slack/bolt": "^3.14.0",
-    "ts-node": "^10.9.1"
+    "discord.js": "^14.13.0",
+    "langchain": "^0.0.170",
+    "openai": "^4.12.4"
   }
 }
